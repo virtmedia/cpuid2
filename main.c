@@ -1,6 +1,72 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
+
+const char * featureECX[32] = {	"SSE3", 
+								"PCLMULQDQ",
+								"DTES64",
+								"MONITOR",
+								"DS-CPL",
+								"VMX",
+								"SMX",
+								"EIST",
+								"TM2",
+								"SSSE3",
+								"CNXT-ID",
+								"SDBG",
+								"FMA",
+								"CMPXCHG16B",
+								"xTPR Update Control",
+								"PDCM",
+								"",
+								"PCID",
+								"DCA",
+								"SSE4.1",
+								"SSE4.2",
+								"x2APIC",
+								"MOVBE",
+								"POPCNT",
+								"TSC-Deadline",
+								"AESNI",
+								"XSAVE",
+								"OSXSAVE",
+								"AVX",
+								"F16C",
+								"RDRAND",
+								""};
+	const char * featureEDX[32] = {	"FPU", 
+								"VME",
+								"DE",
+								"PSE",
+								"TSC",
+								"MSR",
+								"PAE",
+								"MCE",
+								"CX8",
+								"APIC",
+								"",
+								"SEP",
+								"MTRR",
+								"PGE",
+								"MCA",
+								"CMOV",
+								"PAT",
+								"PSE-36",
+								"PSN",
+								"CLFSH",
+								"",
+								"DS",
+								"ACPI",
+								"MMX",
+								"FXSR",
+								"SSE",
+								"SSE2",
+								"SS",
+								"HTT",
+								"TM",
+								"",
+								"PBE"};
 
 typedef struct cpuid_struct {
 	unsigned int eax;
@@ -27,17 +93,23 @@ void u32ToStr (uint32_t value, char *buffer)
 	buffer[4] = 0;
 }
 
-int printCPUVendor(void)
+int CPUVendor(char *s)
 {
-	char buffer[8];
+	char buffer[13];
+	
+	
 	cpuid_t info;
 	cpuid(&info, 0, 0);
 	u32ToStr(info.ebx, buffer);
-	printf("%.4s",buffer);
-	u32ToStr(info.edx, buffer);
-	printf("%.4s",buffer);
-	u32ToStr(info.ecx, buffer);
-	printf("%.4s\n",buffer);
+	//printf("%.4s",buffer);
+	u32ToStr(info.edx, buffer+4);
+	//printf("%.4s",buffer);
+	u32ToStr(info.ecx, buffer+8);
+	//printf("%.4s\n",buffer);
+	
+	memcpy(s, &buffer, 13);
+	
+	
 	//Return 1 if GenuineIntel, othervise return 0;
 	if (
 	memcmp((char *) &info.ebx, "Genu", 4) ||
@@ -48,15 +120,33 @@ int printCPUVendor(void)
 	
 }
 
-
-
-
-int main(void)	//(int argc, char **argv)
-{	
-	int isIntel = printCPUVendor();
+void brandIndex(char *s){
 	cpuid_t info;
 	cpuid(&info, 1, 0);
-	/*
+	sprintf(s, "%d", info.eax & 0xFF);
+	return;
+}
+
+void featureList(void){
+	cpuid_t info;
+	cpuid(&info, 1, 0);
+	int i;
+	for(i=0;i<32;++i){
+		if((info.ecx & (uint32_t)(1<<i)))
+		printf(" %s", featureECX[i]);
+		
+	}
+	printf("\nFeature list from EDX:\n");
+	for(i=0;i<32;++i){
+		if((info.edx & (uint32_t)(1<<i)))
+		printf(" %s", featureEDX[i]);
+		
+	}
+	return;
+	
+}
+
+/*
 		EAX
 			Version Information: Type, Family, Model, and Stepping ID (see Figure 3-6)
 		EBX
@@ -74,128 +164,21 @@ int main(void)	//(int argc, char **argv)
 			IDs reserved for addressing different logical processors in a physical package. This field is only valid if
 			CPUID.1.EDX.HTT[bit 28]= 1.
 	*/
-	printf("Brand Index: %d\n", info.eax & 0xFF);
+
+int main(void)	//(int argc, char **argv)
+{	
+	char strbuf[256];
+	CPUVendor(strbuf);
+	printf("CPU Vendor: %.12s\n", strbuf);
 	
-	printf("Feature list:\n");
-	if((info.ecx & (uint32_t)(1<<0)))
-		printf("\tSSE3\n");
-	if((info.ecx & (uint32_t)(1<<1)))
-		printf("\tPCLMULQDQ\n");
-	if((info.ecx & (uint32_t)(1<<2)))
-		printf("\tDTES64\n");
-	if((info.ecx & (uint32_t)(1<<3)))
-		printf("\tMONITOR\n");
-	if((info.ecx & (uint32_t)(1<<4)))
-		printf("\tDS-CPL\n");
-	if((info.ecx & (uint32_t)(1<<5)))
-		printf("\tVMX\n");
-	if((info.ecx & (uint32_t)(1<<6)))
-		printf("\tSMX\n");
-	if((info.ecx & (uint32_t)(1<<7)))
-		printf("\tEIST\n");
-	if((info.ecx & (uint32_t)(1<<8)))
-		printf("\tTM2\n");
-	if((info.ecx & (uint32_t)(1<<9)))
-		printf("\tSSSE3\n");
-	if((info.ecx & (uint32_t)(1<<10)))
-		printf("\tCNXT-ID\n");
-	if((info.ecx & (uint32_t)(1<<11)))
-		printf("\tSDBG\n");
-	if((info.ecx & (uint32_t)(1<<12)))
-		printf("\tFMA\n");
-	if((info.ecx & (uint32_t)(1<<13)))
-		printf("\tCMPXCHG16B\n");
-	if((info.ecx & (uint32_t)(1<<14)))
-		printf("\txTPR Update Control\n");
-	if((info.ecx & (uint32_t)(1<<15)))
-		printf("\tPDCM\n");
-	if((info.ecx & (uint32_t)(1<<17)))
-		printf("\tPCID\n");
-	if((info.ecx & (uint32_t)(1<<18)))
-		printf("\tDCA\n");
-	if((info.ecx & (uint32_t)(1<<19)))
-		printf("\tSSE4.1\n");
-	if((info.ecx & (uint32_t)(1<<20)))
-		printf("\tSSE4.2\n");
-	if((info.ecx & (uint32_t)(1<<21)))
-		printf("\tx2APIC\n");
-	if((info.ecx & (uint32_t)(1<<22)))
-		printf("\tMOVBE\n");
-	if((info.ecx & (uint32_t)(1<<23)))
-		printf("\tPOPCNT\n");
-	if((info.ecx & (uint32_t)(1<<24)))
-		printf("\tTSC-Deadline\n");
-	if((info.ecx & (uint32_t)(1<<25)))
-		printf("\tAESNI\n");
-	if((info.ecx & (uint32_t)(1<<26)))
-		printf("\tXSAVE\n");
-	if((info.ecx & (uint32_t)(1<<27)))
-		printf("\tOSXSAVE\n");
-	if((info.ecx & (uint32_t)(1<<28)))
-		printf("\tAVX\n");
-	if((info.ecx & (uint32_t)(1<<29)))
-		printf("\tF16C\n");
-	if((info.ecx & (uint32_t)(1<<30)))
-		printf("\tRDRAND\n");
+	brandIndex(strbuf);
+	printf("Brand Index: %s\n", strbuf);
 	
-	if((info.edx & (uint32_t)(1<<0)))
-		printf("\tFPU\n");
-	if((info.edx & (uint32_t)(1<<1)))
-		printf("\tVME\n");
-	if((info.edx & (uint32_t)(1<<2)))
-		printf("\tDE\n");
-	if((info.edx & (uint32_t)(1<<3)))
-		printf("\tPSE\n");
-	if((info.edx & (uint32_t)(1<<4)))
-		printf("\tTSC\n");
-	if((info.edx & (uint32_t)(1<<5)))
-		printf("\tMSR\n");
-	if((info.edx & (uint32_t)(1<<6)))
-		printf("\tPAE\n");
-	if((info.edx & (uint32_t)(1<<7)))
-		printf("\tMCE\n");
-	if((info.edx & (uint32_t)(1<<8)))
-		printf("\tCX8\n");
-	if((info.edx & (uint32_t)(1<<9)))
-		printf("\tAPIC\n");
-	if((info.edx & (uint32_t)(1<<11)))
-		printf("\tSEP\n");
-	if((info.edx & (uint32_t)(1<<12)))
-		printf("\tMTRR\n");
-	if((info.edx & (uint32_t)(1<<13)))
-		printf("\tPGE\n");
-	if((info.edx & (uint32_t)(1<<14)))
-		printf("\tMCA\n");
-	if((info.edx & (uint32_t)(1<<15)))
-		printf("\tCMOV\n");
-	if((info.edx & (uint32_t)(1<<16)))
-		printf("\tPAT\n");
-	if((info.edx & (uint32_t)(1<<17)))
-		printf("\tPSE-36\n");
-	if((info.edx & (uint32_t)(1<<18)))
-		printf("\tPSN\n");
-	if((info.edx & (uint32_t)(1<<19)))
-		printf("\tCLFSH\n");
-	if((info.edx & (uint32_t)(1<<21)))
-		printf("\tDS\n");
-	if((info.edx & (uint32_t)(1<<22)))
-		printf("\tACPI\n");
-	if((info.edx & (uint32_t)(1<<23)))
-		printf("\tMMX\n");
-	if((info.edx & (uint32_t)(1<<24)))
-		printf("\tFXSR\n");
-	if((info.edx & (uint32_t)(1<<25)))
-		printf("\tSSE\n");
-	if((info.edx & (uint32_t)(1<<26)))
-		printf("\tSSE2\n");
-	if((info.edx & (uint32_t)(1<<27)))
-		printf("\tSS\n");
-	if((info.edx & (uint32_t)(1<<28)))
-		printf("\tHTT\n");
-	if((info.edx & (uint32_t)(1<<29)))
-		printf("\tTM\n");
-	if((info.edx & (uint32_t)(1<<31)))
-		printf("\tPBE\n");
+	
+	
+	printf("\nFeature list from ECX: \n");
+	featureList();
+	
 	
 	
 	return 0;
